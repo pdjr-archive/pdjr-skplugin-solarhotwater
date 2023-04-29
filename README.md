@@ -5,7 +5,7 @@ Controller for solar powered hot water generation
 ## Description
 
 **pdjr-skplugin-solarhotwater** implements a simple algorithm which
-outputs a binary control signal dependent upon the output of some
+raises a binary control signal dependent upon the output of some
 power source and a connected battery's state of charge.
 
 The plugin was developed so that surplus energy from a small solar
@@ -13,9 +13,9 @@ power array could be used to electrically heat a thermal store; other
 applications are, of course, possible.
 
 The plugin operates by monitoring the instantaneous battery SOC and
-solar power output.
+power source output.
 These readings are compared to configured thresholds and used to
-modulate the value of a binary output key which can be used to control
+modulate the value of a binary output which can be used to control
 some target device.
 
 ## Configuration
