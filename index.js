@@ -101,10 +101,10 @@ module.exports = function(app) {
         var batterysocstream = app.streambundle.getSelfStream(options.batterysocpath);
         if (batterysocstream) {
           // Check availability of solar power data...
-          var solarpowerstream = app.streambundle.getSelfStream(options.solarpowerpath);
-          if (solarpowerstream) {
+          var powerstream = app.streambundle.getSelfStream(options.powerpath);
+          if (powerstream) {
             // Subscribe to data streams...
-            unsubscribes.push(bacon.combineAsArray(enablestream.skipDuplicates(), batterysocstream.skipDuplicates(), solarpowerstream.skipDuplicates()).onValue(([enabled, soc, power]) => {
+            unsubscribes.push(bacon.combineAsArray(enablestream.skipDuplicates(), batterysocstream.skipDuplicates(), powerstream.skipDuplicates()).onValue(([enabled, soc, power]) => {
 	            enabled = parseInt(enabled);
               if (enabled) {
                 soc = parseInt(soc * 100);
@@ -122,24 +122,24 @@ module.exports = function(app) {
                 }
                 // If heating is enabled switch heating on and off dependent upon solar power output... 
                 if (batterySocPermits === 1) {
-                  heaterState = (power > options.solarpowerthreshold)?1:0;
+                  heaterState = (power > options.powerthreshold)?1:0;
                 }
                 if (heaterState === 1) {
-                  if ((lastEnabledState != enabled) || (lastHeaterState != heaterState)) log.N("solar water heating is enabled and ON");
+                  if ((lastEnabledState != enabled) || (lastHeaterState != heaterState)) log.N("control output is enabled and ON");
                 } else {
-                  if ((lastEnabledState != enabled) || (lastBatterySocPermits != batterySocPermits) || (lastHeaterState != heaterState)) log.N("solar water heating is enabled and OFF (%s)", (batterySocPermits === 1)?"solar power too low":"battery SOC too low")
+                  if ((lastEnabledState != enabled) || (lastBatterySocPermits != batterySocPermits) || (lastHeaterState != heaterState)) log.N("control output is enabled and OFF (%s)", (batterySocPermits === 1)?"power level too low":"battery SOC too low")
                 }
                 delta.clear().addValue(options.outputpath, heaterState).commit();
               } else {
                 if (lastEnabledState != enabled) {
-                  log.N("solar water heating is disabled");
+                  log.N("control output is disabled");
                   delta.clear().addValue(options.outputpath, 0).commit();
 		            }
               }
               lastEnabledState = enabled; lastBatterySocPermits = batterySocPermits; lastHeaterState = heaterState;
             }));
           } else {
-            log.E("cannot connect to solar power stream on '%s'", options.solarpowerpath);
+            log.E("cannot connect to power stream on '%s'", options.solarpowerpath);
           }
         } else {
           log.E("cannot connect to battery SOC stream on '%s'", options.batterysocpath);
