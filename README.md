@@ -1,16 +1,26 @@
 # pdjr-skplugin-solarhotwater
 
-Controller for solar powered hot water generation
+Controller for solar powered hot water generation.
 
-## Description
+## Background
+
+My ship has a solar panel array which is used to charge the ship's
+domestic battery bank.
+Quite often the battery bank becomes fully charged and most of the
+output of the solar panel array remains unused.
+The plugin was developed so that surplus energy from the solar array
+could be used to electrically heat the ship's thermal store: running
+an electric water heater often consumes more power than the solar
+array can supply so top-up from the ship's battery is necessary, but
+modulating water heating against battery recharge makes a reasonable
+strategy.other
+applications are, of course, possible.
 
 **pdjr-skplugin-solarhotwater** implements a simple algorithm which
 raises a binary control signal dependent upon the output of some
 power source and a connected battery's state of charge.
 
-The plugin was developed so that surplus energy from a small solar
-power array could be used to electrically heat a thermal store; other
-applications are, of course, possible.
+
 
 The plugin operates by monitoring the instantaneous battery SOC and
 power source output.
