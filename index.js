@@ -67,12 +67,12 @@ module.exports = function(app) {
     },
     "default": {
       "enablepath": "mqtt.switch.solar_hot_water",
-      "statepath": "plugins.solarhotwater.state",
+      "solarpowerpath": "electrical.solar.279.panelPower",
+      "solarpowerthreshold": 400,
       "batterysocpath": "electrical.batteries.278.capacity.stateOfCharge",
       "batterysocstartthreshold": 99,
       "batterysocstopthreshold": 95,
-      "solarpowerpath": "electrical.solar.279.panelPower",
-      "solarpowerthreshold": 400
+      "statepath": "plugins.solarhotwater.state"
     }
   }
   
