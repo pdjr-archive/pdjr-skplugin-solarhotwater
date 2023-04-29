@@ -29,26 +29,20 @@ outputpath               | Signal K path which will have its value set to 1 when
 batterysocpath           | The Signal K path which reports battery SOC. | ''
 batterysocstartthreshold | The SOC at which the controller should start heating (if other conditions are met). | 1.0
 batterysocstopthreshold  | The SOC at which the controller should stop heating. | 0.95
-solarpowerpath           | The Signal K path which reports solar output in Watts. | ''
-solarpowerthreshold      | The solar panel output in Watts above which heating should be allowed. | 400
+powerpath                | The Signal K path which reports the output of the power source Watts. | ''
+powerthreshold           | The power source output in Watts above which heating should be allowed. | 400
 
 ## Operation
 
-1. The plugin heater control output is set to OFF (0) on startup.
+1. ```outputpath``` is set to OFF (0) on startup.
 
-2. The value of *enablepath* is a remote-control that determines
-   whether (1) or not (0) the plugin should be enabled.
-   Typically this value will be modulated by some external control
-   interface.
+2. Whilst ```enablepath``` is (1), the plugin checks the value on
+   ```batterysocpath``` to see if it is above
+   ```batterysocstartthreshold``` and if so, operation of the plugin
+   is allowed and will remain allowed until the value of
+   ```batterysocpath``` falls below ```battersocstopthreshold```.
 
-3. Whilst *enablepath* is 1, the plugin checks the value on
-   *batterysocpath* to see if it is above *batterysocstartthreshold*
-   and if so, heater control is allowed and will remain allowed until
-   the value on *batterysocpath* falls below *battersocstopthreshold*.
-
-4. If heater control is both enabled and allowed, then the value on
-   *solarpowerpath* is checked to see if it is greater than *solarpowerthreshold*
-   and if so, *outputpath* is set to 1, otherwise 0.
-
-In summary, with the plugin enabled, if the battery SOC is 100% and
-solar output is sufficient, then heating will commence.
+3. If operation is allowed and ```enablebath``` is (1) then the value
+   of ```solarpowerpath``` is checked to see if it is greater than
+   ```solarpowerthreshold```, and, if so, ```outputpath``` is set to
+   (1), otherwise to (0).

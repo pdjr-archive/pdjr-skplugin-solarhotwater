@@ -61,14 +61,14 @@ module.exports = function(app) {
         "description": "Battery SOC must remain above this value for output to remain on",
         "type": "number"
       },
-      "solarpowerpath": {
-        "title": "Solar power path",
-        "description": "Path name of value reporting solar output power",
+      "powerpath": {
+        "title": "Power path",
+        "description": "Path name of value reporting power source output",
         "type": "string"
       },
-      "solarpowerthreshold": {
-        "title": "Solar power threshold",
-        "description": "Charge power must be at least equal to this value for output to remain on",
+      "powerthreshold": {
+        "title": "Power threshold",
+        "description": "Power source output power must be at least equal to this value for output to remain on",
         "type": "number"
       }
     },
@@ -78,8 +78,8 @@ module.exports = function(app) {
       "batterysocpath": "electrical.batteries.278.capacity.stateOfCharge",
       "batterysocstartthreshold": 99,
       "batterysocstopthreshold": 95,
-      "solarpowerpath": "electrical.solar.279.panelPower",
-      "solarpowerthreshold": 400
+      "powerpath": "electrical.solar.279.panelPower",
+      "powerthreshold": 400
     }
   }
   
