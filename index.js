@@ -14,18 +14,12 @@
  * permissions and limitations under the License.
  */
 
-const bacon = require('baconjs');
 const Log = require("./lib/signalk-liblog/Log.js");
-const Schema = require("./lib/signalk-libschema/Schema.js");
-const Notification = require("./lib/signalk-libnotification/Notification.js");
 const Delta = require("./lib/signalk-libdelta/Delta.js");
 
 const PLUGIN_ID = "solarhotwater";
-const PLUGIN_NAME = "Controller for solar hot water generation";
+const PLUGIN_NAME = "pdjr-skplugin-solarhotwater";
 const PLUGIN_DESCRIPTION = "Controller for solar hot water generation";
-
-const PLUGIN_SCHEMA_FILE = __dirname + "/schema.json";
-const PLUGIN_UISCHEMA_FILE = __dirname + "/uischema.json";
 
 module.exports = function(app) {
   var plugin = {};
@@ -37,25 +31,60 @@ module.exports = function(app) {
 
   const bacon = require('baconjs');
   const log = new Log(plugin.id, { ncallback: app.setPluginStatus, ecallback: app.setPluginError });
-  const notification = new Notification(app, plugin.id, { "state": "alarm", "method": [ ] });
   const delta = new Delta(app, plugin.id);
 
-  plugin.schema = function() {
-    var schema = Schema.createSchema(PLUGIN_SCHEMA_FILE);
-    return(schema.getSchema());
-  };
-
-  plugin.uiSchema = function() {
-    var schema = Schema.createSchema(PLUGIN_UISCHEMA_FILE);
-    return(schema.getSchema());
+  plugin.schema = {
+    "type": "object",
+    "properties": {
+      "enablepath": {
+        "title": "Enable service path",
+        "type": "string"
+      }, 
+      "outputpath": {
+        "title": "Output control path",
+        "type": "string"
+      },
+      "batterysocpath": {
+        "title": "Battery SOC path",
+        "type": "string"
+      },
+      "batterysocstartthreshold": {
+        "title": "SOC start threshold",
+        "type": "number"
+      },
+      "batterysocstopthreshold": {
+        "title": "SOC stop threshold",
+        "type": "number"
+      },
+      "solarpowerpath": {
+        "title": "Solar power path",
+        "type": "string"
+      },
+      "solarpowerthreshold": {
+        "title": "Solar power operating threshold",
+        "type": "number"
+      }
+    },
+    "default": {
+      "enablepath": "mqtt.switch.solar_hot_water",
+      "statepath": "plugins.solarhotwater.state",
+      "batterysocpath": "electrical.batteries.278.capacity.stateOfCharge",
+      "batterysocstartthreshold": 99,
+      "batterysocstopthreshold": 95,
+      "solarpowerpath": "electrical.solar.279.panelPower",
+      "solarpowerthreshold": 400
+    }
   }
+  
+  plugin.uiSchema = function() {}
 
   plugin.start = function(options) {
     var batterySocPermits = 0;
     var heaterState = 0;
+    var lastEnabledState = -1, lastBatterySocPermits = -1, lastHeaterState = -1;
 
     // Switch off the heater...
-    delta.clear().addValue(options.heatercontrolpath, heaterState).commit();
+    delta.clear().addValue(options.outputpath, heaterState).commit();
 
     if (options) {
       // Check availability of enabling control...
@@ -68,11 +97,11 @@ module.exports = function(app) {
           var solarpowerstream = app.streambundle.getSelfStream(options.solarpowerpath);
           if (solarpowerstream) {
             // Subscribe to data streams...
-            unsubscribes.push(bacon.combineAsArray(pluginenabledstream.skipDuplicates(), batterysocstream.skipDuplicates(), solarpowerstream.skipDuplicates()).onValue(([enabled, soc, power]) => {
-	      enabled = parseInt(enabled);
+            unsubscribes.push(bacon.combineAsArray(enablestream.skipDuplicates(), batterysocstream.skipDuplicates(), solarpowerstream.skipDuplicates()).onValue(([enabled, soc, power]) => {
+	            enabled = parseInt(enabled);
               if (enabled) {
                 soc = parseInt(soc * 100);
-		power = parseInt(power);
+		            power = parseInt(power);
                 // Use SOC to determine if heating is viable whilst maintaining battery state...
                 if (batterySocPermits == 0) {
                   if (soc >= options.batterysocstartthreshold) {
@@ -84,21 +113,23 @@ module.exports = function(app) {
                     heaterState = 0;
                   }
                 }
-
                 // If heating is enabled switch heating on and off dependent upon solar power output... 
                 if (batterySocPermits === 1) {
                   heaterState = (power > options.solarpowerthreshold)?1:0;
                 }
                 if (heaterState === 1) {
-                  log.N("solar water heating is enabled and ON");
+                  if ((lastEnabledState != enabled) || (lastHeaterState != heaterState)) log.N("solar water heating is enabled and ON");
                 } else {
-                  log.N("solar water heating is enabled and OFF (%s)", (batterySocPermits === 1)?"solar power too low":"battery SOC too low")
+                  if ((lastEnabledState != enabled) || (lastBatterySocPermits != batterySocPermits) || (lastHeaterState != heaterState)) log.N("solar water heating is enabled and OFF (%s)", (batterySocPermits === 1)?"solar power too low":"battery SOC too low")
                 }
-                delta.clear().addValue(options.heatercontrolpath, heaterState).commit();
+                delta.clear().addValue(options.outputpath, heaterState).commit();
               } else {
-                log.N("solar water heating is disabled")
-                delta.clear().addValue(options.heatercontrolpath, 0).commit();
+                if (lastEnabledState != enabled) {
+                  log.N("solar water heating is disabled");
+                  delta.clear().addValue(options.outputpath, 0).commit();
+		            }
               }
+              lastEnabledState = enabled; lastBatterySocPermits = batterySocPermits; lastHeaterState = heaterState;
             }));
           } else {
             log.E("cannot connect to solar power stream on '%s'", options.solarpowerpath);
