@@ -37,42 +37,49 @@ module.exports = function(app) {
     "type": "object",
     "properties": {
       "enablepath": {
-        "title": "Enable service path",
+        "title": "Enable path",
+        "description": "Path name of value which switches service on (1) or off (0)",
         "type": "string"
       }, 
       "outputpath": {
-        "title": "Output control path",
+        "title": "Output path",
+        "description": "Path name of value which will be used to switch heating on (1) or off (0)",
         "type": "string"
       },
       "batterysocpath": {
         "title": "Battery SOC path",
+        "description": "Path name of value reporting battery state of charge",
         "type": "string"
       },
       "batterysocstartthreshold": {
-        "title": "SOC start threshold",
+        "title": "Battery SOC start threshold",
+        "description": "Battery SOC must be at least equal to this value before output can be switched on",
         "type": "number"
       },
       "batterysocstopthreshold": {
         "title": "SOC stop threshold",
+        "description": "Battery SOC must remain above this value for output to remain on",
         "type": "number"
       },
       "solarpowerpath": {
         "title": "Solar power path",
+        "description": "Path name of value reporting solar output power",
         "type": "string"
       },
       "solarpowerthreshold": {
-        "title": "Solar power operating threshold",
+        "title": "Solar power threshold",
+        "description": "Charge power must be at least equal to this value for output to remain on",
         "type": "number"
       }
     },
     "default": {
       "enablepath": "mqtt.switch.solar_hot_water",
-      "solarpowerpath": "electrical.solar.279.panelPower",
-      "solarpowerthreshold": 400,
+      "outputpath": "plugins.solarhotwater.state",
       "batterysocpath": "electrical.batteries.278.capacity.stateOfCharge",
       "batterysocstartthreshold": 99,
       "batterysocstopthreshold": 95,
-      "statepath": "plugins.solarhotwater.state"
+      "solarpowerpath": "electrical.solar.279.panelPower",
+      "solarpowerthreshold": 400
     }
   }
   
