@@ -54,3 +54,7 @@ powerthreshold           | The power source output in Watts above which heating 
    of ```solarpowerpath``` is checked to see if it is greater than
    ```solarpowerthreshold```, and, if so, ```outputpath``` is set to
    (1), otherwise to (0).
+
+## Author
+
+Paul Reeve <*preeve_at_pdjr_dot_eu*>
