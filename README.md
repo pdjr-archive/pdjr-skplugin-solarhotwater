@@ -6,11 +6,11 @@ Controller for solar powered hot water generation.
 
 My ship has a solar panel array which is used to charge the ship's
 domestic battery bank.
-Quite often the battery bank becomes fully charged and most of the
-continued output of the solar panel array remains unused.
+Quite often the battery bank becomes fully charged and continuing
+output of the solar panel array remains unused.
 
-This plugin was developed so that surplus energy from the solar array
-could be used to heat the ship's thermal store by operating an
+This plugin was developed so that surplus energy from the solar panel
+array could be used to heat the ship's thermal store by operating an
 immersion heater.
 Of course, running an electric water heater usually consumes more power
 than the solar array can supply so top-up from the ship's battery is
