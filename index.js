@@ -14,12 +14,65 @@
  * permissions and limitations under the License.
  */
 
+const bacon = require('baconjs');
+
 const Log = require("./lib/signalk-liblog/Log.js");
 const Delta = require("./lib/signalk-libdelta/Delta.js");
 
 const PLUGIN_ID = "solarhotwater";
 const PLUGIN_NAME = "pdjr-skplugin-solarhotwater";
 const PLUGIN_DESCRIPTION = "Controller for solar hot water generation";
+const PLUGIN_SCHEMA = {
+  "type": "object",
+  "properties": {
+    "enablepath": {
+      "title": "Enable path",
+      "description": "Path name of value which switches service on (1) or off (0)",
+      "type": "string"
+    }, 
+    "outputpath": {
+      "title": "Output path",
+      "description": "Path name of value which will be used to switch heating on (1) or off (0)",
+      "type": "string"
+    },
+    "batterysocpath": {
+      "title": "Battery SOC path",
+      "description": "Path name of value reporting battery state of charge",
+      "type": "string"
+    },
+    "batterysocstartthreshold": {
+      "title": "Battery SOC start threshold",
+      "description": "Battery SOC must be at least equal to this value before output can be switched on",
+      "type": "number"
+    },
+    "batterysocstopthreshold": {
+      "title": "SOC stop threshold",
+      "description": "Battery SOC must remain above this value for output to remain on",
+      "type": "number"
+    },
+    "powerpath": {
+      "title": "Power path",
+      "description": "Path name of value reporting power source output",
+      "type": "string"
+    },
+    "powerthreshold": {
+      "title": "Power threshold",
+      "description": "Power source output power must be at least equal to this value for output to remain on",
+      "type": "number"
+    }
+  }
+};
+const PLUGIN_UISCHEMA = {};
+
+const OPTIONS_DEFAULT = {
+  "enablepath": "mqtt.switch.solar_hot_water",
+  "outputpath": "plugins.solarhotwater.state",
+  "batterysocpath": "electrical.batteries.278.capacity.stateOfCharge",
+  "batterysocstartthreshold": 99,
+  "batterysocstopthreshold": 95,
+  "powerpath": "electrical.solar.279.panelPower",
+  "powerthreshold": 400
+}
 
 module.exports = function(app) {
   var plugin = {};
@@ -28,64 +81,18 @@ module.exports = function(app) {
   plugin.id = PLUGIN_ID;
   plugin.name = PLUGIN_NAME;
   plugin.description = PLUGIN_DESCRIPTION;
+  plugin.schema = PLUGIN_SCHEMA;
+  plugin.uiSchema = PLUGIN_UISCHEMA;
 
-  const bacon = require('baconjs');
   const log = new Log(plugin.id, { ncallback: app.setPluginStatus, ecallback: app.setPluginError });
   const delta = new Delta(app, plugin.id);
 
-  plugin.schema = {
-    "type": "object",
-    "properties": {
-      "enablepath": {
-        "title": "Enable path",
-        "description": "Path name of value which switches service on (1) or off (0)",
-        "type": "string"
-      }, 
-      "outputpath": {
-        "title": "Output path",
-        "description": "Path name of value which will be used to switch heating on (1) or off (0)",
-        "type": "string"
-      },
-      "batterysocpath": {
-        "title": "Battery SOC path",
-        "description": "Path name of value reporting battery state of charge",
-        "type": "string"
-      },
-      "batterysocstartthreshold": {
-        "title": "Battery SOC start threshold",
-        "description": "Battery SOC must be at least equal to this value before output can be switched on",
-        "type": "number"
-      },
-      "batterysocstopthreshold": {
-        "title": "SOC stop threshold",
-        "description": "Battery SOC must remain above this value for output to remain on",
-        "type": "number"
-      },
-      "powerpath": {
-        "title": "Power path",
-        "description": "Path name of value reporting power source output",
-        "type": "string"
-      },
-      "powerthreshold": {
-        "title": "Power threshold",
-        "description": "Power source output power must be at least equal to this value for output to remain on",
-        "type": "number"
-      }
-    },
-    "default": {
-      "enablepath": "mqtt.switch.solar_hot_water",
-      "outputpath": "plugins.solarhotwater.state",
-      "batterysocpath": "electrical.batteries.278.capacity.stateOfCharge",
-      "batterysocstartthreshold": 99,
-      "batterysocstopthreshold": 95,
-      "powerpath": "electrical.solar.279.panelPower",
-      "powerthreshold": 400
-    }
-  }
-  
-  plugin.uiSchema = function() {}
-
   plugin.start = function(options) {
+
+    if (Object.keys(options).length === 0) {
+      options = OPTIONS_DEFAULT;
+      app.savePluginOptions(options, () => log.N("using default"))
+    }
     var batterySocPermits = 0;
     var heaterState = 0;
     var lastEnabledState = -1, lastBatterySocPermits = -1, lastHeaterState = -1;
