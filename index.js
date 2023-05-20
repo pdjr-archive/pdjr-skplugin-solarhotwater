@@ -65,12 +65,12 @@ const PLUGIN_SCHEMA = {
 const PLUGIN_UISCHEMA = {};
 
 const OPTIONS_DEFAULT = {
-  "enablepath": "mqtt.switch.solar_hot_water",
-  "outputpath": "plugins.solarhotwater.state",
-  "batterysocpath": "electrical.batteries.278.capacity.stateOfCharge",
+  "enablepath": "",
+  "outputpath": "",
+  "batterysocpath": "",
   "batterysocstartthreshold": 99,
   "batterysocstopthreshold": 95,
-  "powerpath": "electrical.solar.279.panelPower",
+  "powerpath": "",
   "powerthreshold": 400
 }
 
@@ -91,16 +91,13 @@ module.exports = function(app) {
 
     if (Object.keys(options).length === 0) {
       options = OPTIONS_DEFAULT;
-      app.savePluginOptions(options, () => log.N("using default"))
+      app.savePluginOptions(options, () => log.N("saving default configuration to disk", false));
     }
-    var batterySocPermits = 0;
-    var heaterState = 0;
-    var lastEnabledState = -1, lastBatterySocPermits = -1, lastHeaterState = -1;
 
     // Switch off the heater...
     delta.clear().addValue(options.outputpath, heaterState).commit();
 
-    if (options) {
+    if ((options.enablepath != "") && (options.batterysocpath != "") && (options.powerpath != "") && (options.outputpath != "")) {
       // Check availability of enabling control...
       var enablestream = app.streambundle.getSelfStream(options.enablepath);
       if (enablestream) {
@@ -110,6 +107,10 @@ module.exports = function(app) {
           // Check availability of solar power data...
           var powerstream = app.streambundle.getSelfStream(options.powerpath);
           if (powerstream) {
+            log.N("starting automatic control on '%s'", options.outputpath);
+            var batterySocPermits = 0;
+            var heaterState = 0;
+            var lastEnabledState = -1, lastBatterySocPermits = -1, lastHeaterState = -1;
             // Subscribe to data streams...
             unsubscribes.push(bacon.combineAsArray(enablestream.skipDuplicates(), batterysocstream.skipDuplicates(), powerstream.skipDuplicates()).onValue(([enabled, soc, power]) => {
 	            enabled = parseInt(enabled);
@@ -146,13 +147,13 @@ module.exports = function(app) {
               lastEnabledState = enabled; lastBatterySocPermits = batterySocPermits; lastHeaterState = heaterState;
             }));
           } else {
-            log.E("cannot connect to power stream on '%s'", options.solarpowerpath);
+            log.E("cannot connect to powerpath '%s' (check configuration)", options.powerpath);
           }
         } else {
-          log.E("cannot connect to battery SOC stream on '%s'", options.batterysocpath);
+          log.E("cannot connect to batterysocpath '%s' (check configuration)", options.batterysocpath);
         }
       } else {
-        log.E("cannot connect to plugin control stream");
+        log.E("cannot connect to enablepath '%s' (check configuration)", options.enablepath);
       }
     } else {
       log.E("bad or missing configuration");
