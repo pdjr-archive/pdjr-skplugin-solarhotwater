@@ -94,6 +94,10 @@ module.exports = function(app) {
       app.savePluginOptions(options, () => log.N("saving default configuration to disk", false));
     }
 
+    var batterySocPermits = 0;
+    var heaterState = 0;
+    var lastEnabledState = -1, lastBatterySocPermits = -1, lastHeaterState = -1;
+
     // Switch off the heater...
     delta.clear().addValue(options.outputpath, heaterState).commit();
 
@@ -107,10 +111,7 @@ module.exports = function(app) {
           // Check availability of solar power data...
           var powerstream = app.streambundle.getSelfStream(options.powerpath);
           if (powerstream) {
-            log.N("starting automatic control on '%s'", options.outputpath);
-            var batterySocPermits = 0;
-            var heaterState = 0;
-            var lastEnabledState = -1, lastBatterySocPermits = -1, lastHeaterState = -1;
+            log.N("started: modulating output path '%s'", options.outputpath);
             // Subscribe to data streams...
             unsubscribes.push(bacon.combineAsArray(enablestream.skipDuplicates(), batterysocstream.skipDuplicates(), powerstream.skipDuplicates()).onValue(([enabled, soc, power]) => {
 	            enabled = parseInt(enabled);
@@ -133,14 +134,14 @@ module.exports = function(app) {
                   heaterState = (power > options.powerthreshold)?1:0;
                 }
                 if (heaterState === 1) {
-                  if ((lastEnabledState != enabled) || (lastHeaterState != heaterState)) log.N("control output is enabled and ON");
+                  if ((lastEnabledState != enabled) || (lastHeaterState != heaterState)) log.N("active: control output is enabled and ON");
                 } else {
-                  if ((lastEnabledState != enabled) || (lastBatterySocPermits != batterySocPermits) || (lastHeaterState != heaterState)) log.N("control output is enabled and OFF (%s)", (batterySocPermits === 1)?"power level too low":"battery SOC too low")
+                  if ((lastEnabledState != enabled) || (lastBatterySocPermits != batterySocPermits) || (lastHeaterState != heaterState)) log.N("active: control output is enabled and OFF (%s)", (batterySocPermits === 1)?"power level too low":"battery SOC too low")
                 }
                 delta.clear().addValue(options.outputpath, heaterState).commit();
               } else {
                 if (lastEnabledState != enabled) {
-                  log.N("control output is disabled");
+                  log.N("standing by: monitoring control path '%s'", options.enablepath);
                   delta.clear().addValue(options.outputpath, 0).commit();
 		            }
               }
