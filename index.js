@@ -111,7 +111,7 @@ module.exports = function(app) {
           // Check availability of solar power data...
           var powerstream = app.streambundle.getSelfStream(options.powerpath);
           if (powerstream) {
-            log.N("started: modulating output path '%s'", options.outputpath);
+            log.N("started - modulating output path '%s'", options.outputpath);
             // Subscribe to data streams...
             unsubscribes.push(bacon.combineAsArray(enablestream.skipDuplicates(), batterysocstream.skipDuplicates(), powerstream.skipDuplicates()).onValue(([enabled, soc, power]) => {
 	            enabled = parseInt(enabled);
@@ -134,14 +134,14 @@ module.exports = function(app) {
                   heaterState = (power > options.powerthreshold)?1:0;
                 }
                 if (heaterState === 1) {
-                  if ((lastEnabledState != enabled) || (lastHeaterState != heaterState)) log.N("active: control output is enabled and ON");
+                  if ((lastEnabledState != enabled) || (lastHeaterState != heaterState)) log.N("active - control output is ON");
                 } else {
-                  if ((lastEnabledState != enabled) || (lastBatterySocPermits != batterySocPermits) || (lastHeaterState != heaterState)) log.N("active: control output is enabled and OFF (%s)", (batterySocPermits === 1)?"power level too low":"battery SOC too low")
+                  if ((lastEnabledState != enabled) || (lastBatterySocPermits != batterySocPermits) || (lastHeaterState != heaterState)) log.N("active - control output is OFF (%s)", (batterySocPermits === 1)?"power level too low":"battery SOC too low")
                 }
                 delta.clear().addValue(options.outputpath, heaterState).commit();
               } else {
                 if (lastEnabledState != enabled) {
-                  log.N("standing by: monitoring control path '%s'", options.enablepath);
+                  log.N("standing by - monitoring control path '%s'", options.enablepath);
                   delta.clear().addValue(options.outputpath, 0).commit();
 		            }
               }
