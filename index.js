@@ -114,36 +114,46 @@ module.exports = function(app) {
             log.N("started - modulating output path '%s'", options.outputpath);
             // Subscribe to data streams...
             unsubscribes.push(bacon.combineAsArray(enablestream.skipDuplicates(), batterysocstream.skipDuplicates(), powerstream.skipDuplicates()).onValue(([enabled, soc, power]) => {
-	            enabled = parseInt(enabled);
-              if (enabled) {
-                soc = parseInt(soc * 100);
-		            power = parseInt(power);
-                // Use SOC to determine if heating is viable whilst maintaining battery state...
-                if (batterySocPermits == 0) {
-                  if (soc >= options.batterysocstartthreshold) {
-                    batterySocPermits = 1;
+              switch (parseInt(enabled)) {
+                case 1: // Operation is enabled
+                  soc = parseInt(soc * 100);
+		              power = parseInt(power);
+
+                  // Use SOC to determine if heating is viable whilst maintaining battery state...
+                  if (batterySocPermits == 0) {
+                    if (soc >= options.batterysocstartthreshold) {
+                      batterySocPermits = 1;
+                    }
+                  } else {
+                    if (soc <= options.batterysocstopthreshold) {
+                      batterySocPermits = 0;
+                      heaterState = 0;
+                    }
                   }
-                } else {
-                  if (soc <= options.batterysocstopthreshold) {
-                    batterySocPermits = 0;
-                    heaterState = 0;
+
+                  // If heating is enabled switch heating on and off dependent upon solar power output... 
+                  if (batterySocPermits === 1) {
+                    heaterState = (power > options.powerthreshold)?1:0;
                   }
-                }
-                // If heating is enabled switch heating on and off dependent upon solar power output... 
-                if (batterySocPermits === 1) {
-                  heaterState = (power > options.powerthreshold)?1:0;
-                }
-                if (heaterState === 1) {
-                  if ((lastEnabledState != enabled) || (lastHeaterState != heaterState)) log.N("active - control output is ON");
-                } else {
-                  if ((lastEnabledState != enabled) || (lastBatterySocPermits != batterySocPermits) || (lastHeaterState != heaterState)) log.N("active - control output is OFF (%s)", (batterySocPermits === 1)?"power level too low":"battery SOC too low")
-                }
-                delta.clear().addValue(options.outputpath, heaterState).commit();
-              } else {
-                if (lastEnabledState != enabled) {
-                  log.N("standing by - monitoring control path '%s'", options.enablepath);
-                  delta.clear().addValue(options.outputpath, 0).commit();
-		            }
+
+                  if (heaterState === 1) {
+                    if ((lastEnabledState !== 1) || (lastHeaterState !== heaterState)) {
+                      log.N("active - control output is ON");
+                      delta.clear().addValue(options.outputpath, heaterState).commit();
+                    }
+                  } else {
+                    if ((lastEnabledState != 1) || (lastBatterySocPermits != batterySocPermits) || (lastHeaterState != heaterState)) {
+                      log.N("active - control output is OFF (%s)", (batterySocPermits === 1)?"power level too low":"battery SOC too low")
+                      delta.clear().addValue(options.outputpath, heaterState).commit();
+                    }
+                  }  
+                  break;
+                case 0:
+                  if (lastEnabledState !== 1) {
+                    log.N("standing by - monitoring control path '%s'", options.enablepath);
+                    delta.clear().addValue(options.outputpath, 0).commit();
+		              }
+                  break;
               }
               lastEnabledState = enabled; lastBatterySocPermits = batterySocPermits; lastHeaterState = heaterState;
             }));
