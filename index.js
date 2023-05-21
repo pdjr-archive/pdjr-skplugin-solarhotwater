@@ -114,7 +114,8 @@ module.exports = function(app) {
             log.N("started - modulating output path '%s'", options.outputpath);
             // Subscribe to data streams...
             unsubscribes.push(bacon.combineAsArray(enablestream.skipDuplicates(), batterysocstream.skipDuplicates(), powerstream.skipDuplicates()).onValue(([enabled, soc, power]) => {
-              switch (parseInt(enabled)) {
+              var enabled = parseInt(enabled);
+              switch (enabled) {
                 case 1: // Operation is enabled
                   soc = parseInt(soc * 100);
 		              power = parseInt(power);
@@ -149,9 +150,9 @@ module.exports = function(app) {
                   }  
                   break;
                 case 0:
-                  if (lastEnabledState !== 1) {
-                    log.N("standing by - monitoring control path '%s'", options.enablepath);
+                  if (lastEnabledState !== 0) {
                     delta.clear().addValue(options.outputpath, 0).commit();
+                    log.N("standing by - monitoring control path '%s'", options.enablepath);
 		              }
                   break;
               }
