@@ -111,7 +111,6 @@ module.exports = function(app) {
           // Check availability of solar power data...
           var powerstream = app.streambundle.getSelfStream(options.powerpath);
           if (powerstream) {
-            log.N("started - modulating output path '%s'", options.outputpath);
             // Subscribe to data streams...
             unsubscribes.push(bacon.combineAsArray(enablestream.skipDuplicates(), batterysocstream.skipDuplicates(), powerstream.skipDuplicates()).onValue(([enabled, soc, power]) => {
               var enabled = parseInt(enabled);
@@ -139,12 +138,12 @@ module.exports = function(app) {
 
                   if (heaterState === 1) {
                     if ((lastEnabledState !== 1) || (lastHeaterState !== heaterState)) {
-                      log.N("active - control output is ON");
+                      log.N("working: control output is ON");
                       delta.clear().addValue(options.outputpath, heaterState).commit();
                     }
                   } else {
                     if ((lastEnabledState != 1) || (lastBatterySocPermits != batterySocPermits) || (lastHeaterState != heaterState)) {
-                      log.N("active - control output is OFF (%s)", (batterySocPermits === 1)?"power level too low":"battery SOC too low")
+                      log.N("working: control output is OFF (%s)", (batterySocPermits === 1)?"power level too low":"battery SOC too low")
                       delta.clear().addValue(options.outputpath, heaterState).commit();
                     }
                   }  
@@ -152,7 +151,7 @@ module.exports = function(app) {
                 case 0:
                   if (lastEnabledState !== 0) {
                     delta.clear().addValue(options.outputpath, 0).commit();
-                    log.N("standing by - monitoring control path '%s'", options.enablepath);
+                    log.N("standing by: monitoring control path '%s'", options.enablepath);
 		              }
                   break;
               }
